@@ -58,8 +58,10 @@ class Linear(object):
 
 
 if __name__ == '__main__':
-    l = Linear(inp_dim=7,
-               out_dim=3)
-    sample_input = np.ones((7,))
+    inp_dim = 7
+    out_dim = 3
+    l = Linear(inp_dim=inp_dim,
+               out_dim=out_dim)
+    sample_input = np.ones((inp_dim,))
     print l.forward(sample_input).shape
-    print l.backward(np.ones(3)).shape
+    print l.backward(np.ones(out_dim)).shape

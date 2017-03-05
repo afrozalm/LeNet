@@ -8,4 +8,4 @@ class LeNet(object):
         conv_channels = []
         linear_nodes = []
 
-        self.model = []
+        self.layers = []
