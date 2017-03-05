@@ -11,6 +11,7 @@ class Softmax(object):
                              size=(classes,))
         self.params = [W, b]
         self.feature_dim = feature_dim
+        self.name = 'softmax'
 
         def softmax(x):
             max_val = np.max(x)
@@ -48,6 +49,8 @@ class Softmax(object):
                                       axis=0))
 
         dE_db = np.dot(gdY, deltas)
+
+        self.gradParams = [dE_dW, dE_db]
 
         return dE_dX
 

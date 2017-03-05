@@ -14,6 +14,7 @@ class Conv(object):
         b = np.random.normal(loc=0.001,
                              scale=0.0001,
                              size=(n_output_channels))
+        self.name = 'conv'
         self.params = [W, b]
         self.n_input_channels = n_input_channels
         self.n_output_channels = n_output_channels
@@ -87,7 +88,7 @@ class Conv(object):
 if __name__ == '__main__':
     n_input_channels = 3
     n_output_channels = 4
-    c = Conv(n_input_channels, n_output_channels, 2, )
+    c = Conv(n_input_channels, n_output_channels, 2 )
     sample_deltas = np.ndarray((n_output_channels))
     input_map = np.ones((n_input_channels, 32, 32))
     output = c.forward(input_map)

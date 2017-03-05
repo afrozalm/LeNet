@@ -7,6 +7,7 @@ class Linear(object):
 
         self.inp_dim = inp_dim
         self.out_dim = out_dim
+        self.name = 'linear'
 
         sigma = 2.0 / (inp_dim + out_dim)
         W = np.random.normal(loc=0.0,

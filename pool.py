@@ -5,7 +5,8 @@ class MaxPool_2(object):
         self.params = []
         self.ker_size = 2
         self.stride = 2
-
+        self.name = 'maxpool'
+        self.gradParams = []
 
     def forward(self, fmap):
         n_channels, width, height = fmap.shape
