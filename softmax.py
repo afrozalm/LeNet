@@ -41,16 +41,13 @@ class Softmax(object):
         gdY = self.deriv_out
         dE_dX = np.dot(np.dot(W, gdY),
                        deltas)
-        print dE_dX
 
         dE_dW = np.dot(np.expand_dims(self.inp_vec,
                                       axis=1),
                        np.expand_dims(np.dot(gdY, deltas),
                                       axis=0))
-        print dE_dW
 
         dE_db = np.dot(gdY, deltas)
-        print dE_db
 
         return dE_dX
 
