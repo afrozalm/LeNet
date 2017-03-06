@@ -27,8 +27,7 @@ class MaxPool_2(object):
                     j_end = 2*(col+1)
                     max_idx = np.argmax(fmap[ch][i_beg:i_end, j_beg:j_end])
                     output[ch][row][col] = np.max(fmap[ch][i_beg:i_end, j_beg:j_end])
-                    # max_idxs[ch][row][col] = max_idx
-                    mask[ch][2*row + max_idx/2 ][2*col + max_idx%2]
+                    mask[ch][2*row + max_idx/2 ][2*col + max_idx%2] = 1
 
         self.mask = mask
         return output
@@ -54,4 +53,4 @@ if __name__ == '__main__':
     d = np.ones((shape[0], shape[1]/2, shape[2]/2))
     m = MaxPool_2()
     print m.forward(a).shape
-    print m.backward(d).shape
+    print np.sum(m.backward(d))

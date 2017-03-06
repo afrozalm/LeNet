@@ -8,6 +8,8 @@ class Linear(object):
         self.inp_dim = inp_dim
         self.out_dim = out_dim
         self.name = 'linear'
+        self.momentum_init = False
+        self.i_t = 0
 
         sigma = 2.0 / (inp_dim + out_dim)
         W = np.random.normal(loc=0.0,
@@ -58,6 +60,31 @@ class Linear(object):
         return dE_dX
 
 
+    def updateParams(self, hyperParams):
+        alpha, beta1, beta2 = hyperParams
+        epsilon = 10e-20
+        self.i_t += 1
+        if not self.momentum_init:
+            momentum_init = True
+            self.momentum1 = []
+            self.momentum2 = []
+            for g in self.gradParams:
+                self.momentum1.append(np.copy(g))
+                self.momentum2.append(np.copy(np.square(g)))
+
+        else:
+            self.momentum1 = map( lambda x, y: beta1 * x + (1 - beta1) * y,
+                                  self.momentum1, self.gradParams)
+            self.momentum2 = map( lambda x, y: beta2 * x + (1 - beta2) * y,
+                                  self.momentum2, self.gradParams)
+
+        m_t = map(lambda x: x/(1 - beta1**self.i_t), self.momentum1)
+        v_t = map(lambda x: x/(1 - beta2**self.i_t), self.momentum2)
+
+        self.params = map(lambda theta, m, v: np.subtract(theta,
+                                                          alpha*np.divide(m, np.sqrt(v + epsilon))),
+                          self.params, m_t, v_t)
+
 if __name__ == '__main__':
     inp_dim = 7
     out_dim = 3
@@ -66,3 +93,4 @@ if __name__ == '__main__':
     sample_input = np.ones((inp_dim,))
     print l.forward(sample_input).shape
     print l.backward(np.ones(out_dim)).shape
+    l.updateParams([0.01, 0.9, 0.99])

@@ -19,6 +19,8 @@ class Conv(object):
         self.n_input_channels = n_input_channels
         self.n_output_channels = n_output_channels
         self.kr_size = kr_size
+        self.momentum_init = False
+        self.i_t = 0
 
         if activation_fn == 'relu':
             self.activation_fn = lambda x: x * ( x > 0)
@@ -75,7 +77,8 @@ class Conv(object):
             for j in xrange(self.n_input_channels):
                 dE_dX[j] += signal.convolve2d(deltas[i], flip_kr(W[i][j]))
                 # Calculating dE_dW
-                dE_dW[i][j] = signal.convolve2d(self.in_fmap[j], flip_kr(gdY), mode='valid' )
+                dE_dW[i][j] = flip_kr(signal.convolve2d(self.in_fmap[j],
+                                                        flip_kr(gdY), mode='valid'))
             # Calculating dE_db
             dE_db[i] = np.sum(gdY)
 
@@ -83,6 +86,30 @@ class Conv(object):
 
         return dE_dX
 
+    def updateParams(self, hyperParams):
+        alpha, beta1, beta2 = hyperParams
+        epsilon = 10e-20
+        self.i_t += 1
+        if not self.momentum_init:
+            momentum_init = True
+            self.momentum1 = []
+            self.momentum2 = []
+            for g in self.gradParams:
+                self.momentum1.append(np.copy(g))
+                self.momentum2.append(np.copy(np.square(g)))
+
+        else:
+            self.momentum1 = map( lambda x, y: beta1 * x + (1 - beta1) * y,
+                                  self.momentum1, self.gradParams)
+            self.momentum2 = map( lambda x, y: beta2 * x + (1 - beta2) * y,
+                                  self.momentum2, self.gradParams)
+
+        m_t = map(lambda x: x/(1 - beta1**self.i_t), self.momentum1)
+        v_t = map(lambda x: x/(1 - beta2**self.i_t), self.momentum2)
+
+        self.params = map(lambda theta, m, v: np.subtract(theta,
+                                                          alpha*np.divide(m, np.sqrt(v + epsilon))),
+                          self.params, m_t, v_t)
 
 if __name__ == '__main__':
     n_input_channels = 1
@@ -93,5 +120,6 @@ if __name__ == '__main__':
     output = c.forward(input_map)
     print output.shape
     sample_deltas = np.ones(output.shape)
-    dE_dX = c.backward(sample_deltas)
+    dE_dX = c.backward(sample_deltas* 10e-7)
     print np.sum(dE_dX)
+    c.updateParams([0.01, 0.9, 0.99])
