@@ -10,8 +10,6 @@ class LeNet(object):
         self.gradParams = []
         self.activation = activation
         self.no_of_classes = 10
-        self.n_input_channels = 1
-        self.linear_nodes = [120, 84]
         self.update_idx = 0
         self.momentum_init = False
 
@@ -31,7 +29,8 @@ class LeNet(object):
         self.linear_layers += [Softmax(84, self.no_of_classes)]
 
         for l in self.conv_layers + self.linear_layers:
-            self.params += l.params
+            if not l.name == 'maxpool':
+                self.params += [l.params]
 
     def forward(self, image_tensor):
         assert image_tensor.shape == (1, 32, 32)
@@ -71,12 +70,13 @@ class LeNet(object):
         dE_dX = self.outputs[-1] - self.target    # derivative of softmax layer w.r.t. cost
         for l in self.linear_layers[::-1]:
             dE_dX = l.backward(dE_dX)
-            self.gradParams = l.gradParams + self.gradParams
+            self.gradParams = [l.gradParams] + self.gradParams
 
-        dE_dX = dE_dX.reshape(120, 1, 1)  #
+        dE_dX = dE_dX.reshape(120, 1, 1)
         for l in self.conv_layers[::-1]:
             dE_dX = l.backward(dE_dX)
-            self.gradParams = l.gradParams + self.gradParams
+            if not l.name == 'maxpool':
+                self.gradParams = [l.gradParams] + self.gradParams
 
         return dE_dX
 
@@ -154,11 +154,101 @@ class LeNet(object):
         else:
             momentum(hyperParams)
 
+    # def plotPerformance(self):
+
+    def test(self, test_data, test_labels):
+        hits = 0
+        testsize = test_labels.shape[0]
+        for inp, target in zip(test_data, test_labels):
+            self.forward(inp)
+            self.cross_entropy_loss(target)
+            hits += self.hit
+        return (100.0*hits)/testsize
+
+    def train(self, train_data, train_labels, val_data, val_labels, config):
+        '''
+        config : a dictionary with following entries
+         filename   : name of file to store results
+         batchSize  : batchSize for minibatch
+         max_epochs : number of epochs to run
+         optimizer  : 'momentum' or 'adam'
+         hyperParams:
+          momentum:
+             learningRate : hyperParams[0]
+             gamma        : hyperParams[1]
+          adam:
+             beta1 : hyperParams[0]
+             beta2 : hyperParams[1]
+             alpha : hyperParams[2]
+        '''
+        train_size = train_labels.shape[0]
+        val_size = val_labels.shape[0]
+        shuffle_train = np.random.permutation(np.arange(0, train_size))
+        shuffle_val   = np.random.permutation(np.arange(0, val_size))
+
+        filename       = config['filename']
+        hyperParams    = config['hyperParams']
+        optimizer      = config['optimizer']
+        minibatch_size = config['batchSize']
+        max_epochs     = config['max_epochs']
+        assert minibatch_size > 0
+
+        def accumulate_grads( g1, g2 ):
+            if g1 == []:
+                return g2
+            else:
+                return map( lambda x, y: [x[0] + y[0],
+                                        x[1] + y[1]],
+                            g1, g2)
+        loss_train = 0
+        def TrainStep():
+            loss_train = 0
+            hits = 0
+            for i in range(0, train_size, minibatch_size ):
+                local_gradParams = []
+                local_loss = 0
+                for j in range(0, minibatch_size):
+                    index = shuffle_train[i + j]
+                    self.forward( train_data[index])
+                    local_loss += self.cross_entropy_loss( train_labels[index] )
+                    hits += self.hit
+                    self.backward()
+                    local_gradParams =  accumulate_grads(local_gradParams, self.gradParams)
+                if i % 500 == 0:
+                    with open('tr_' + filename, 'a') as f:
+                        f.write( str(local_loss/minibatch_size) + ', ' \
+                                 + str(hits*100.0/minibatch_size) + '\n')
+
+                # averaging gradParams
+                self.gradParams = map(lambda x:[x[0]/minibatch_size,
+                                                 x[1]/minibatch_size],
+                                      local_gradParams)
+                self.updateParams(hyperParams, optimizer)
+                loss_train += local_loss
+            return [loss_train/train_size, (hits*100.0)/train_size]
+
+        def ValidationStep():
+            loss_val = 0
+            hits = 0
+            for i in range(0, val_size):
+                self.forward(val_data[shuffle_val[i]])
+                loss_val += self.cross_entropy_loss(val_labels[shuffle_val[i]])
+                hits += self.hit
+                if i % 500 == 0:
+                    with open('val_' + filename, 'a') as f:
+                        f.write( str(loss_val/i) + ', ' \
+                                 + str(hits*100.0/i) + '\n')
+            return [loss_val/val_size, (hits*100.0)/val_size]
+
+        for epoch in tqdm(xrange(0, max_epochs)):
+            loss_train, accuracy_train = TrainStep()
+            loss_val, accuracy_val = ValidationStep()
+
 
 if __name__ == '__main__':
     inp_tensor = np.zeros((1, 32, 32))
     net = LeNet()
-    print net.forward(inp_tensor)
-    print net.cross_entropy_loss(4)
-    print net.backward(7).shape
+    net.forward(inp_tensor)
+    net.cross_entropy_loss(4)
+    net.backward(7).shape
     net.updateParams([0.01, 0.9, 0.999])

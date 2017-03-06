@@ -19,6 +19,7 @@ class Conv(object):
         self.n_input_channels = n_input_channels
         self.n_output_channels = n_output_channels
         self.kr_size = kr_size
+
         if activation_fn == 'relu':
             self.activation_fn = lambda x: x * ( x > 0)
             self.activation_derivative = lambda x: 1. * (x > 0)
@@ -56,7 +57,6 @@ class Conv(object):
         self.deriv_out = deriv_out
         return out_fmap
 
-
     def backward(self, deltas):
         '''
         This function takes an input deltas (dE_dX) from succeding layer
@@ -76,7 +76,6 @@ class Conv(object):
                 dE_dX[j] += signal.convolve2d(deltas[i], flip_kr(W[i][j]))
                 # Calculating dE_dW
                 dE_dW[i][j] = signal.convolve2d(self.in_fmap[j], flip_kr(gdY), mode='valid' )
-
             # Calculating dE_db
             dE_db[i] = np.sum(gdY)
 
@@ -86,11 +85,11 @@ class Conv(object):
 
 
 if __name__ == '__main__':
-    n_input_channels = 3
-    n_output_channels = 4
-    c = Conv(n_input_channels, n_output_channels, 2 )
+    n_input_channels = 1
+    n_output_channels = 6
+    c = Conv(n_input_channels, n_output_channels, 5)
     sample_deltas = np.ndarray((n_output_channels))
-    input_map = np.ones((n_input_channels, 32, 32))
+    input_map = np.ones((n_input_channels, 28, 28))
     output = c.forward(input_map)
     print output.shape
     sample_deltas = np.ones(output.shape)
