@@ -1,7 +1,9 @@
 import numpy as np
+import time
 from conv import Conv
 from linear import Linear
 from softmax import Softmax
+
 from pool import MaxPool_2
 
 class LeNet(object):
@@ -154,7 +156,9 @@ class LeNet(object):
         else:
             momentum(hyperParams)
 
-    # def plotPerformance(self):
+    def plotPerformance(self, filename):
+        trn_pts = []
+        val_pts = []
 
     def test(self, test_data, test_labels):
         hits = 0
@@ -193,6 +197,7 @@ class LeNet(object):
         max_epochs     = config['max_epochs']
         assert minibatch_size > 0
 
+        start_time = time.time()
         def accumulate_grads( g1, g2 ):
             if g1 == []:
                 return g2
@@ -217,7 +222,8 @@ class LeNet(object):
                 if i % 500 == 0:
                     with open('tr_' + filename, 'a') as f:
                         f.write( str(local_loss/minibatch_size) + ', ' \
-                                 + str(hits*100.0/minibatch_size) + '\n')
+                                 + str(hits*100.0/minibatch_size) + ', ' \
+                                 + str(time.time() - start_time ) + ', 0\n')
 
                 # averaging gradParams
                 self.gradParams = map(lambda x:[x[0]/minibatch_size,
@@ -237,12 +243,24 @@ class LeNet(object):
                 if i % 500 == 0:
                     with open('val_' + filename, 'a') as f:
                         f.write( str(loss_val/i) + ', ' \
-                                 + str(hits*100.0/i) + '\n')
+                                 + str(hits*100.0/i) + ', ' \
+                                 + str(time.time() - start_time ) + ', 0\n')
             return [loss_val/val_size, (hits*100.0)/val_size]
 
         for epoch in tqdm(xrange(0, max_epochs)):
             loss_train, accuracy_train = TrainStep()
+            with open('tr_' + filename, 'a') as f:
+                f.write( str(loss_train) + ', ' \
+                         + str(accuracy_train) + ', ' \
+                         + str(time.time() - start_time ) + ', 1\n')
+
             loss_val, accuracy_val = ValidationStep()
+            with open('val_' + filename, 'a') as f:
+                f.write( str(loss_val) + ', ' \
+                         + str(accuracy_val) + ', ' \
+                         + str(time.time() - start_time ) + ', 1\n')
+
+        self.plotPerformance(filename)
 
 
 if __name__ == '__main__':
