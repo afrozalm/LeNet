@@ -9,8 +9,8 @@ f.close()
 
 net = LeNet()
 config = {
-    'filename'    : 'relu_activ.log',
-    'batchSize'   : 20,
+    'filename'    : 'relu.log',
+    'batchSize'   : 10,
     'max_epochs'  : 1,
     'hyperParams' : [0.01, 0.9, 0.9]
 }

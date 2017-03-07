@@ -33,17 +33,15 @@ class LeNet(object):
     def forward(self, image_tensor):
         assert image_tensor.shape == (1, 28, 28)
         self.inp_tensor = image_tensor
-        self.outputs = []
         out = image_tensor
         for l in self.conv_layers:
             out = l.forward(out)
-            self.outputs += [out]
 
         out = out.reshape(120)
         for l in self.linear_layers:
             out = l.forward(out)
-            self.outputs += [out]
 
+        self.probs = out
         return out
 
     def cross_entropy_loss(self, target):
@@ -51,30 +49,25 @@ class LeNet(object):
         assert target < self.no_of_classes
         self.target = np.zeros(self.no_of_classes)
         self.target[target] = 1
-        probs = self.outputs[-1]
-        if np.argmax(probs) == target:
+        if np.argmax(self.probs) == target:
             self.hit = 1
         else:
             self.hit = 0
-        self.loss = -1 * np.log(probs[target] + epsilon)
+        self.loss = -1 * np.log(self.probs[target] + epsilon)
         return self.loss
 
     def backward(self, target=None):
-        self.gradParams = []
         if not target == None:
             self.target = np.zeros(self.no_of_classes)
             self.target[target] = 1
 
-        dE_dX = self.outputs[-1] - self.target    # derivative of softmax layer w.r.t. cost
+        dE_dX = self.probs - self.target    # derivative of softmax layer w.r.t. cost
         for l in self.linear_layers[::-1]:
             dE_dX = l.backward(dE_dX)
-            self.gradParams = [l.gradParams] + self.gradParams
 
         dE_dX = dE_dX.reshape(120, 1, 1)
         for l in self.conv_layers[::-1]:
             dE_dX = l.backward(dE_dX)
-            if not l.name == 'maxpool':
-                self.gradParams = [l.gradParams] + self.gradParams
 
         return dE_dX
 
@@ -89,7 +82,7 @@ class LeNet(object):
              beta1 : hyperParams[1]
              beta2 : hyperParams[2]
         '''
-        for l in self.linear_layers:
+        for l in self.layers:
             if not l.name == 'maxpool':
                 l.updateParams(hyperParams)
 
@@ -99,8 +92,8 @@ class LeNet(object):
 
     def test(self, test_data, test_labels):
         hits = 0
-        # testsize = test_labels.shape[0]
-        testsize = 100
+        testsize = test_labels.shape[0]
+        # testsize = 100
         for inp, target in zip(test_data, test_labels):
             self.forward(inp.reshape(1, 28, 28))
             self.cross_entropy_loss(target)
@@ -122,10 +115,10 @@ class LeNet(object):
              beta1 : hyperParams[1]
              beta2 : hyperParams[2]
         '''
-        # train_size = train_labels.shape[0]
-        # val_size = val_labels.shape[0]
-        train_size = 1600
-        val_size = 800
+        train_size = train_labels.shape[0]
+        val_size = val_labels.shape[0]
+        # train_size = 1600
+        # val_size = 800
         shuffle_train = np.random.permutation(np.arange(0, train_size))
         shuffle_val   = np.random.permutation(np.arange(0, val_size))
 
@@ -136,19 +129,11 @@ class LeNet(object):
         assert minibatch_size > 0
 
         start_time = time.time()
-        def accumulate_grads( g1, g2 ):
-            if g1 == []:
-                return g2
-            else:
-                return map( lambda x, y: [x[0] + y[0],
-                                        x[1] + y[1]],
-                            g1, g2)
         loss_train = 0
         def TrainStep():
             loss_train = 0
             hits = 0
             for i in tqdm(xrange(0, train_size, minibatch_size )):
-                local_gradParams = []
                 local_loss = 0
                 for j in xrange(0, minibatch_size):
                     index = shuffle_train[i + j]
@@ -156,18 +141,13 @@ class LeNet(object):
                     local_loss += self.cross_entropy_loss( train_labels[index] )
                     hits += self.hit
                     self.backward()
-                    local_gradParams =  accumulate_grads(local_gradParams, self.gradParams)
 
-                if i % 100 == 0 and i > 0:
+                if i % 50 == 0 and i > 0:
                     with open('tr_' + filename, 'a') as f:
                         f.write( str(local_loss/minibatch_size) + ', ' \
                                  + str(hits*100.0/i) + ', ' \
                                  + str(time.time() - start_time ) + ', 0\n')
 
-                # averaging gradParams
-                self.gradParams = map(lambda x: [x[0]/minibatch_size,
-                                                 x[1]/minibatch_size],
-                                      local_gradParams)
                 self.updateParams(hyperParams)
                 loss_train += local_loss
             return [loss_train/train_size, (hits*100.0)/train_size]
@@ -207,5 +187,8 @@ if __name__ == '__main__':
     net = LeNet()
     net.forward(inp_tensor)
     net.cross_entropy_loss(4)
-    net.backward(7).shape
+    net.backward(7)
+    net.backward(7)
+    net.backward(7)
+    net.backward(7)
     net.updateParams([1, 0.9, 0.999])

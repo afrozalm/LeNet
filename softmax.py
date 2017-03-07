@@ -9,8 +9,13 @@ class Softmax(object):
         b = np.random.normal(loc=0.001,
                              scale=0.0001,
                              size=(classes,))
+        dE_dW = np.ndarray(W.shape)
+        dE_db = np.ndarray(b.shape)
         self.params = [W, b]
+        self.gradParams = [dE_dW, dE_db]
         self.feature_dim = feature_dim
+        self.accumulated_gradParams = []
+        self.acc_no = 0
         self.name = 'softmax'
         self.momentum_init = False
         self.i_t = 0
@@ -27,6 +32,7 @@ class Softmax(object):
         self.activation_derivative = softmax_derivative
 
 
+
     def forward(self, feature_vec):
         assert self.feature_dim == feature_vec.shape[-1] # checking the last dim matches or not
         self.inp_vec = feature_vec
@@ -38,10 +44,22 @@ class Softmax(object):
 
         return probs
 
+    def accumulate_grads(self):
+        self.acc_no += 1
+        if self.accumulated_gradParams == []:
+            self.accumulated_gradParams = map(lambda x : x * 1,
+                                              self.gradParams)
+        else:
+            self.accumulated_gradParams = map(lambda x, y: x+y,
+                                  self.accumulated_gradParams,
+                                  self.gradParams)
+
     def backward(self, deltas):
         W = self.params[0]
+        dE_dW, dE_db = self.gradParams
 
         gdY = self.deriv_out
+        # print np.sum(dE_dW), 's+++', np.sum(dE_db)
         dE_dX = np.dot(np.dot(W, gdY),
                        deltas)
 
@@ -51,9 +69,10 @@ class Softmax(object):
                                       axis=0))
 
         dE_db = np.dot(gdY, deltas)
+        # print np.sum(dE_dW), 's---', np.sum(dE_db)
 
         self.gradParams = [dE_dW, dE_db]
-
+        self.accumulate_grads()
         return dE_dX
 
 
@@ -61,6 +80,11 @@ class Softmax(object):
         alpha, beta1, beta2 = hyperParams
         epsilon = 10e-20
         self.i_t += 1
+
+        self.gradParams = map( lambda x : x / self.acc_no,
+                               self.accumulated_gradParams)
+        self.acc_no = 0
+
         if not self.momentum_init:
             momentum_init = True
             self.momentum1 = []
@@ -82,6 +106,8 @@ class Softmax(object):
                                                           alpha*np.divide(m, np.sqrt(v + epsilon))),
                           self.params, m_t, v_t)
 
+        self.accumulated_gradParams = []
+
 
 if __name__ == '__main__':
     feature_dim = 5
@@ -90,4 +116,5 @@ if __name__ == '__main__':
     sample_input = np.ones((feature_dim,))
     print s.forward(sample_input)
     s.backward(np.ones((classes)))
+    s.backward(np.ones((classes))*10e-5)
     s.updateParams([0.01, 0.9, 0.99])
