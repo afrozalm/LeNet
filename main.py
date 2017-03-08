@@ -1,4 +1,3 @@
-import numpy as np
 import gzip
 import cPickle as pkl
 from LeNet import LeNet
@@ -9,10 +8,10 @@ f.close()
 
 net = LeNet()
 config = {
-    'filename'    : 'relu.log',
-    'batchSize'   : 10,
-    'max_epochs'  : 1,
-    'hyperParams' : [0.01, 0.9, 0.9]
+    'filename': 'relu.log',
+    'batchSize': 10,
+    'max_epochs': 1,
+    'hyperParams': [0.01, 0.9, 0.999]
 }
 
 net.train(trainset[0], trainset[1], valset[0], valset[1], config)

@@ -1,8 +1,10 @@
 import numpy as np
+import time
+
 
 class Softmax(object):
     def __init__(self, feature_dim,  classes=10):
-        sigma = 2.0 / ( feature_dim + classes)
+        sigma = 2.0 / (feature_dim + classes)
         W = np.random.normal(loc=0.0,
                              scale=sigma,
                              size=(feature_dim, classes))
@@ -23,7 +25,7 @@ class Softmax(object):
         def softmax(x):
             max_val = np.max(x)
             x = x - max_val
-            return np.exp(x) / np.sum( np.exp(x), axis=0 )
+            return np.exp(x) / np.sum(np.exp(x), axis=0)
 
         def softmax_derivative(vector):
             return np.diag(vector) - np.dot(np.expand_dims(vector, 1),
@@ -31,34 +33,36 @@ class Softmax(object):
         self.activation_fn = softmax
         self.activation_derivative = softmax_derivative
 
-
-
     def forward(self, feature_vec):
-        assert self.feature_dim == feature_vec.shape[-1] # checking the last dim matches or not
+        # checking the last dim matches or not
+        start_time = time.time()
+        assert self.feature_dim == feature_vec.shape[-1]
         self.inp_vec = feature_vec
 
         W, b = self.params
         affine_transform = np.dot(feature_vec, W) + b
         probs = self.activation_fn(affine_transform)
         self.deriv_out = self.activation_derivative(affine_transform)
-
+        # print np.sum(W), np.sum(b)
+        self.time_taken = time.time() - start_time
         return probs
 
     def accumulate_grads(self):
         self.acc_no += 1
         if self.accumulated_gradParams == []:
-            self.accumulated_gradParams = map(lambda x : x * 1,
+            self.accumulated_gradParams = map(lambda x: x * 1,
                                               self.gradParams)
         else:
             self.accumulated_gradParams = map(lambda x, y: x+y,
-                                  self.accumulated_gradParams,
-                                  self.gradParams)
+                                              self.accumulated_gradParams,
+                                              self.gradParams)
 
     def backward(self, deltas):
         W = self.params[0]
         dE_dW, dE_db = self.gradParams
 
         gdY = self.deriv_out
+        # print np.sum(gdY), np.sum(deltas)
         # print np.sum(dE_dW), 's+++', np.sum(dE_db)
         dE_dX = np.dot(np.dot(W, gdY),
                        deltas)
@@ -75,18 +79,17 @@ class Softmax(object):
         self.accumulate_grads()
         return dE_dX
 
-
     def updateParams(self, hyperParams):
         alpha, beta1, beta2 = hyperParams
         epsilon = 10e-20
         self.i_t += 1
 
-        self.gradParams = map( lambda x : x / self.acc_no,
-                               self.accumulated_gradParams)
+        self.gradParams = map(lambda x: x / self.acc_no,
+                              self.accumulated_gradParams)
         self.acc_no = 0
 
         if not self.momentum_init:
-            momentum_init = True
+            self.momentum_init = True
             self.momentum1 = []
             self.momentum2 = []
             for g in self.gradParams:
@@ -94,16 +97,22 @@ class Softmax(object):
                 self.momentum2.append(np.copy(np.square(g)))
 
         else:
-            self.momentum1 = map( lambda x, y: beta1 * x + (1 - beta1) * y,
-                                  self.momentum1, self.gradParams)
-            self.momentum2 = map( lambda x, y: beta2 * x + (1 - beta2) * y,
-                                  self.momentum2, self.gradParams)
+            self.momentum1 = map(lambda m, g: np.add(beta1 * m,
+                                                     (1 - beta1) * g),
+                                 self.momentum1, self.gradParams)
+            self.momentum2 = map(lambda m, g: np.add(beta2 * m,
+                                                     (1 - beta2) *
+                                                     np.square(g)),
+                                 self.momentum2, self.gradParams)
 
         m_t = map(lambda x: x/(1 - beta1**self.i_t), self.momentum1)
         v_t = map(lambda x: x/(1 - beta2**self.i_t), self.momentum2)
+        # print np.sum(v_t[0]), np.sum(v_t[1])
 
-        self.params = map(lambda theta, m, v: np.subtract(theta,
-                                                          alpha*np.divide(m, np.sqrt(v + epsilon))),
+        self.params = map(lambda theta, m, v:
+                          np.subtract(theta,
+                                      alpha*np.divide(m,
+                                                      np.sqrt(v + epsilon))),
                           self.params, m_t, v_t)
 
         self.accumulated_gradParams = []
