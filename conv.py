@@ -141,7 +141,10 @@ class Conv(object):
 
         m_t = map(lambda x: x/(1 - beta1**self.i_t), self.momentum1)
         v_t = map(lambda x: x/(1 - beta2**self.i_t), self.momentum2)
-        # print np.sum(v_t[0]), np.sum(v_t[1])
+        print np.mean(self.params[0]), 'wwwwwwww'
+        print np.mean(self.gradParams[0]), 'dddddddddddd'
+        print np.mean(v_t[0]), 'vvvvvvvvvvvv'
+        print '============='
 
         self.params = map(lambda theta, m, v:
                           np.subtract(theta,

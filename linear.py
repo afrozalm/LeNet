@@ -22,10 +22,7 @@ class Linear(object):
         b = np.random.normal(loc=0.001,
                              scale=0.0001,
                              size=(out_dim,))
-        dE_dW = np.ndarray(W.shape)
-        dE_db = np.ndarray(b.shape)
         self.params = [W, b]
-        self.gradParams = [dE_dW, dE_db]
 
         if activation_fn == 'relu':
             self.activation_fn = lambda x: x * (x > 0)
@@ -58,7 +55,7 @@ class Linear(object):
             self.accumulated_gradParams = map(lambda x: x * 1,
                                               self.gradParams)
         else:
-            self.accumulated_gradParams = map(lambda x, y: x+y,
+            self.accumulated_gradParams = map(lambda x, y: x + y,
                                               self.accumulated_gradParams,
                                               self.gradParams)
 
@@ -67,11 +64,9 @@ class Linear(object):
         dimension out_dim, storing dE_dX
         '''
         W = self.params[0]
-        dE_dW, dE_db = self.gradParams
 
-        # print np.sum(dE_dW), 'l+++', np.sum(dE_db)
         gdY = self.deriv_out
-        dE_dX = np.dot(W, np.multiply(gdY, deltas))
+        dE_dX = np.dot(np.multiply(W, gdY), deltas)
 
         dE_dW = np.dot(np.expand_dims(self.inp_vec,
                                       axis=1),
@@ -79,8 +74,6 @@ class Linear(object):
                                       axis=0))
         dE_db = np.multiply(gdY, deltas)
 
-        # print np.sum(dE_dW), 'l---', np.sum(dE_db)
-        # print np.sum(dE_dX), np.sum(deltas)
         self.gradParams = [dE_dW, dE_db]
         self.accumulate_grads()
 
@@ -94,6 +87,7 @@ class Linear(object):
         self.gradParams = map(lambda x: x / self.acc_no,
                               self.accumulated_gradParams)
         self.acc_no = 0
+        self.accumulated_gradParams = []
 
         if not self.momentum_init:
             self.momentum_init = True
@@ -111,18 +105,16 @@ class Linear(object):
                                                      (1 - beta2) *
                                                      np.square(g)),
                                  self.momentum2, self.gradParams)
+            # print np.sum(self.momentum1[0]), np.sum(self.gradParams[0])
 
         m_t = map(lambda x: x/(1 - beta1**self.i_t), self.momentum1)
         v_t = map(lambda x: x/(1 - beta2**self.i_t), self.momentum2)
-        # print np.sum(self.gradParams[0]), np.sum(self.gradParams[1])
 
         self.params = map(lambda theta, m, v:
                           np.subtract(theta,
                                       alpha * np.divide(m,
                                                         np.sqrt(v + epsilon))),
                           self.params, m_t, v_t)
-
-        self.accumulated_gradParams = []
 
 
 if __name__ == '__main__':

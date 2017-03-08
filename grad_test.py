@@ -1,12 +1,10 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
-from conv import Conv
 from linear import Linear
 from softmax import Softmax
 import os
 from tqdm import tqdm
-from pool import MaxPool_2
 
 
 class LeNet(object):
@@ -16,36 +14,21 @@ class LeNet(object):
         self.build_model()
 
     def build_model(self):
-        self.conv_layers = []
         self.linear_layers = []
         self.layers = []
 
-        # 1x28x28 -> 6x24x24
-        self.conv_layers += [Conv(1, 6, 5, self.activation)]
-        # 6x24x24 -> 6x12x12
-        self.conv_layers += [MaxPool_2()]
-        # 6x12x12 -> 16x8x8
-        self.conv_layers += [Conv(6, 16, 5, self.activation)]
-        # 16x8x8  -> 16x4x4
-        self.conv_layers += [MaxPool_2()]
-        # 16x4x4  -> 120x1x1
-        self.conv_layers += [Conv(16, 120, 4, self.activation)]
-
+        self.linear_layers += [Linear(28*28, 120, self.activation)]
         # 120 -> 84
         self.linear_layers += [Linear(120, 84, self.activation)]
         # 84  -> 10
         self.linear_layers += [Softmax(84, self.no_of_classes)]
 
-        self.layers = self.conv_layers + self.linear_layers
+        self.layers = self.linear_layers
 
     def forward(self, image_tensor):
-        assert image_tensor.shape == (1, 28, 28)
+        assert image_tensor.shape == (28*28,)
         self.inp_tensor = image_tensor
         out = image_tensor
-        for l in self.conv_layers:
-            out = l.forward(out)
-
-        out = out.reshape(120)
         for l in self.linear_layers:
             out = l.forward(out)
 
@@ -72,10 +55,7 @@ class LeNet(object):
         # derivative of softmax layer w.r.t. cost
         dE_dX = self.probs - self.target
         for l in self.linear_layers[::-1]:
-            dE_dX = l.backward(dE_dX)
-
-        dE_dX = dE_dX.reshape(120, 1, 1)
-        for l in self.conv_layers[::-1]:
+            # print np.mean(dE_dX)
             dE_dX = l.backward(dE_dX)
 
         return dE_dX
@@ -92,8 +72,7 @@ class LeNet(object):
              beta2 : hyperParams[2]
         '''
         for l in self.layers:
-            if not l.name == 'maxpool':
-                l.updateParams(hyperParams)
+            l.updateParams(hyperParams)
 
     def plotPerformance(self, filename):
         def get_pts(filename):
@@ -141,10 +120,10 @@ class LeNet(object):
 
     def test(self, test_data, test_labels):
         hits = 0
-        testsize = test_labels.shape[0]
-        # testsize = 100
+        # testsize = test_labels.shape[0]
+        testsize = 100
         for inp, target in zip(test_data, test_labels):
-            self.forward(inp.reshape(1, 28, 28))
+            self.forward(inp)
             self.cross_entropy_loss(target)
             hits += self.hit
         return (100.0*hits)/testsize
@@ -196,19 +175,18 @@ class LeNet(object):
                 local_loss = 0
                 for j in xrange(0, minibatch_size):
                     index = shuffle_train[i + j]
-                    self.forward(train_data[index].reshape(1, 28, 28))
+                    self.forward(train_data[index])
                     local_loss += self.cross_entropy_loss(train_labels[index])
                     hits += self.hit
                     self.backward()
 
-                with open('tr_' + filename, 'a') as f:
-                    f.write(str(local_loss/minibatch_size) + ', '
-                            + str(hits*100.0/i) + ', '
-                            + str(time.time() - start_time) + ', 0\n')
+                if i % 50 == 0 and i > 0:
+                    with open('tr_' + filename, 'a') as f:
+                        f.write(str(local_loss/minibatch_size) + ', '
+                                + str(hits*100.0/i) + ', '
+                                + str(time.time() - start_time) + ', 0\n')
 
                 self.updateParams(hyperParams)
-                if i > 7*minibatch_size:
-                    exit()
                 loss_train += local_loss
             return [loss_train/train_size, (hits*100.0)/train_size]
 
@@ -216,7 +194,7 @@ class LeNet(object):
             loss_val = 0
             hits = 0
             for i in tqdm(xrange(0, val_size)):
-                self.forward(val_data[shuffle_val[i]].reshape(1, 28, 28))
+                self.forward(val_data[shuffle_val[i]])
                 loss_val += self.cross_entropy_loss(val_labels[shuffle_val[i]])
                 hits += self.hit
                 if i % 100 == 0 and i > 0:
@@ -235,11 +213,11 @@ class LeNet(object):
 
             loss_val, accuracy_val = ValidationStep()
             with open('val_' + filename, 'a') as f:
-                f.write(str(loss_val) + ', ' +
+                f.write(str(loss_val) + ', '
                         + str(accuracy_val) + ', '
                         + str(time.time() - start_time) + ', 1\n')
 
-        self.plotPerformance(filename)
+        # self.plotPerformance(filename)
 
 
 if __name__ == '__main__':

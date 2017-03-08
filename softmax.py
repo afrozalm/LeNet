@@ -64,13 +64,10 @@ class Softmax(object):
         gdY = self.deriv_out
         # print np.sum(gdY), np.sum(deltas)
         # print np.sum(dE_dW), 's+++', np.sum(dE_db)
-        dE_dX = np.dot(np.dot(W, gdY),
-                       deltas)
+        dE_dX = np.dot(np.dot(W, gdY), deltas)
 
-        dE_dW = np.dot(np.expand_dims(self.inp_vec,
-                                      axis=1),
-                       np.expand_dims(np.dot(gdY, deltas),
-                                      axis=0))
+        dE_dW = np.dot(np.expand_dims(self.inp_vec, axis=1),
+                       np.expand_dims(np.dot(gdY, deltas), axis=0))
 
         dE_db = np.dot(gdY, deltas)
         # print np.sum(dE_dW), 's---', np.sum(dE_db)
