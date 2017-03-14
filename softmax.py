@@ -27,9 +27,9 @@ class Softmax(object):
             x = x - max_val
             return np.exp(x) / np.sum(np.exp(x), axis=0)
 
-        def softmax_derivative(vector):
-            return np.diag(vector) - np.dot(np.expand_dims(vector, 1),
-                                            np.expand_dims(vector, 0))
+        def softmax_derivative(probs):
+            return np.diag(probs) - np.dot(np.expand_dims(probs, 1),
+                                           np.expand_dims(probs, 0))
         self.activation_fn = softmax
         self.activation_derivative = softmax_derivative
 
@@ -42,7 +42,7 @@ class Softmax(object):
         W, b = self.params
         affine_transform = np.dot(feature_vec, W) + b
         probs = self.activation_fn(affine_transform)
-        self.deriv_out = self.activation_derivative(affine_transform)
+        self.deriv_out = self.activation_derivative(probs)
         # print np.sum(W), np.sum(b)
         self.time_taken = time.time() - start_time
         return probs

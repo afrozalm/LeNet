@@ -9,9 +9,9 @@ f.close()
 net = LeNet()
 config = {
     'filename': 'relu.log',
-    'batchSize': 80,
-    'max_epochs': 4,
-    'hyperParams': [0.0001, 0.9, 0.999]
+    'batchSize': 160,
+    'max_epochs': 10,
+    'hyperParams': [0.01, 0.9, 0.999]
 }
 
 net.train(trainset[0], trainset[1], valset[0], valset[1], config)

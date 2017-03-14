@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import signal
 import time
+import pylab
+from PIL import Image
 
 
 class Conv(object):
@@ -15,9 +17,10 @@ class Conv(object):
                              size=(n_output_channels,
                                    n_input_channels,
                                    kr_size, kr_size))
-        b = np.random.normal(loc=0.001,
-                             scale=0.0001,
-                             size=(n_output_channels))
+        # b = np.random.normal(loc=0.001,
+        #                      scale=0.0001,
+        #                      size=(n_output_channels))
+        b = np.zeros((n_output_channels,))
         dE_dW = np.ndarray(W.shape)
         dE_db = np.ndarray(b.shape)
         self.name = 'conv'
@@ -95,16 +98,17 @@ class Conv(object):
             return np.flipud(np.fliplr(kernel))
 
         # print np.sum(dE_dW), 'c+++', np.sum(dE_db)
-        for i in xrange(self.n_output_channels):
-            gdY = np.multiply(deltas[i], self.deriv_out[i])
-            for j in xrange(self.n_input_channels):
-                dE_dX[j] += signal.convolve2d(deltas[i], flip_kr(W[i][j]))
+        for out_ch in xrange(self.n_output_channels):
+            gdY = np.multiply(deltas[out_ch], self.deriv_out[out_ch])
+            for in_ch in xrange(self.n_input_channels):
+                dE_dX[in_ch] += signal.convolve2d(deltas[out_ch],
+                                                  flip_kr(W[out_ch][in_ch]))
                 # Calculating dE_dW
-                dE_dW[i][j] = flip_kr(signal.convolve2d(self.in_fmap[j],
-                                                        flip_kr(gdY),
-                                                        mode='valid'))
+                dE_dW[out_ch][in_ch] = flip_kr(signal.convolve2d(self.in_fmap[in_ch],
+                                                                 flip_kr(gdY),
+                                                                 mode='valid'))
             # Calculating dE_db
-            dE_db[i] = np.sum(gdY)
+            dE_db[out_ch] = np.sum(gdY)
 
         # print np.sum(dE_dW), 'c---', np.sum(dE_db)
         self.gradParams = [dE_dW, dE_db]
@@ -141,10 +145,6 @@ class Conv(object):
 
         m_t = map(lambda x: x/(1 - beta1**self.i_t), self.momentum1)
         v_t = map(lambda x: x/(1 - beta2**self.i_t), self.momentum2)
-        print np.mean(self.params[0]), 'wwwwwwww'
-        print np.mean(self.gradParams[0]), 'dddddddddddd'
-        print np.mean(v_t[0]), 'vvvvvvvvvvvv'
-        print '============='
 
         self.params = map(lambda theta, m, v:
                           np.subtract(theta,
@@ -154,17 +154,33 @@ class Conv(object):
 
 
 if __name__ == '__main__':
-    n_input_channels = 1
-    n_output_channels = 6
-    c = Conv(n_input_channels, n_output_channels, 5)
-    sample_deltas = np.ndarray((n_output_channels))
-    input_map = np.ones((n_input_channels, 28, 28))
-    output = c.forward(input_map)
-    # print output.shape
-    sample_deltas = np.ones(output.shape)
-    dE_dX = c.backward(sample_deltas * 10e-7)
-    dE_dX = c.backward(sample_deltas * 10e-3)
-    dE_dX = c.backward(sample_deltas * 10e-2)
-    dE_dX = c.backward(sample_deltas * 10e-7)
-    # print np.sum(dE_dX)
-    c.updateParams([0.01, 0.9, 0.99])
+    n_input_channels = 3
+    n_output_channels = 3
+    c = Conv(n_input_channels, n_output_channels, 3)
+    # sample_deltas = np.ndarray((n_output_channels))
+    # input_map = np.ones((n_input_channels, 28, 28))
+    # output = c.forward(input_map)
+    # # print output.shape
+    # sample_deltas = np.ones(output.shape)
+    # dE_dX = c.backward(sample_deltas * 10e-7)
+    # dE_dX = c.backward(sample_deltas * 10e-3)
+    # dE_dX = c.backward(sample_deltas * 10e-2)
+    # dE_dX = c.backward(sample_deltas * 10e-7)
+    # # print np.sum(dE_dX)
+    # c.updateParams([0.01, 0.9, 0.99])
+    img = Image.open(open('3wolfmoon.jpg'))
+    # dimensions are (height, width, channel)
+    img = np.asarray(img, dtype='float64') / 256.
+
+    # put image in 4D tensor of shape (1, 3, height, width)
+    img_ = img.transpose(2, 0, 1).reshape(3, 639, 516)
+    filtered_img = c.forward(img_)
+
+    # plot original image and first and second components of output
+    pylab.subplot(1, 3, 1); pylab.axis('off'); pylab.imshow(img)
+    pylab.gray();
+    # recall that the convOp output (filtered image) is actually a "minibatch",
+    # of size 1 here, so we take index 0 in the first dimension:
+    pylab.subplot(1, 3, 2); pylab.axis('off'); pylab.imshow(filtered_img[0, :, :])
+    pylab.subplot(1, 3, 3); pylab.axis('off'); pylab.imshow(filtered_img[1, :, :])
+    pylab.show()

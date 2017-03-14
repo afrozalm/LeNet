@@ -105,7 +105,7 @@ class Linear(object):
                                                      (1 - beta2) *
                                                      np.square(g)),
                                  self.momentum2, self.gradParams)
-            # print np.sum(self.momentum1[0]), np.sum(self.gradParams[0])
+            print np.mean(self.momentum1[0]), np.mean(self.gradParams[0])
 
         m_t = map(lambda x: x/(1 - beta1**self.i_t), self.momentum1)
         v_t = map(lambda x: x/(1 - beta2**self.i_t), self.momentum2)

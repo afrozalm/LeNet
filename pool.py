@@ -1,4 +1,6 @@
 import numpy as np
+import time
+
 
 class MaxPool_2(object):
     def __init__(self):
@@ -9,6 +11,7 @@ class MaxPool_2(object):
         self.gradParams = []
 
     def forward(self, fmap):
+        start_time = time.time()
         n_channels, width, height = fmap.shape
         # max_idxs = np.ndarray(n_channels,
         #                       width/2,
@@ -30,6 +33,7 @@ class MaxPool_2(object):
                     mask[ch][2*row + max_idx/2 ][2*col + max_idx%2] = 1
 
         self.mask = mask
+        self.time_taken = time.time() - start_time
         return output
 
     def backward(self, deltas):
@@ -47,10 +51,11 @@ class MaxPool_2(object):
 
         return dE_dX
 
+
 if __name__ == '__main__':
-    shape = ( 4, 32, 32 )
-    a = np.ones(shape)
+    shape = (1, 4, 4)
+    a = np.arange(16).reshape(1, 4, 4)
     d = np.ones((shape[0], shape[1]/2, shape[2]/2))
     m = MaxPool_2()
-    print m.forward(a).shape
-    print np.sum(m.backward(d))
+    print m.forward(a)
+    print m.backward(d*2)
