@@ -32,66 +32,66 @@
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.7\textwidth]{keras_lenet/scatter_basic.png}
-  \caption{Without 84 dimensional features}
+  \caption{Without 84 dimensional features for 50000 images}
   \label{fig:basic}
 \end{figure}
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.7\textwidth]{keras_lenet/scatter_encoding.png}
-  \caption{With 84 dimensional features}
+  \caption{With 84 dimensional features for 10000 images(Keras)}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{scatter_encoding.png}
+  \caption{With 84 dimensional features for 10000 images (My Implementation)}
 \end{figure}
 
 \section{Training and Validation Losses}
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{keras_lenet/loss32.png}
-  \caption{Train and Validation loss for batch size 32}
+  \includegraphics[width=0.7\textwidth]{loss.png}
+  \caption{Train and Validation loss for batch size 160 (My Implementation)}
 \end{figure}
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{keras_lenet/loss64.png}
-  \caption{Train and Validation loss for batch size 64}
+  \includegraphics[width=0.7\textwidth]{accuracy.png}
+  \caption{Train and Validation accuracy for batch size 160 (My Implementation)}
 \end{figure}
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{keras_lenet/loss128.png}
-  \caption{Train and Validation loss for batch size 128}
+  \includegraphics[width=\textwidth]{keras_lenet/acc_epoch.png}
+  \caption{Accuracy on different batch sizes per epoch (Keras)}
 \end{figure}
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{keras_lenet/loss200.png}
-  \caption{Train and Validation loss for batch size 200}
+  \includegraphics[width=\textwidth]{keras_lenet/acc_time.png}
+  \caption{Accuracy on different batch sizes per time (Keras)}
 \end{figure}
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{keras_lenet/accuracy32.png}
-  \caption{Train and Validation accuracy for batch size 32}
+  \includegraphics[width=\textwidth]{keras_lenet/loss_epoch.png}
+  \caption{Loss on different batch sizes per epoch (Keras)}
 \end{figure}
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{keras_lenet/accuracy64.png}
-  \caption{Train and Validation accuracy for batch size 64}
+  \includegraphics[width=\textwidth]{keras_lenet/loss_time.png}
+  \caption{Loss on different batch sizes per epoch (Keras)}
 \end{figure}
 
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.7\textwidth]{keras_lenet/accuracy128.png}
-  \caption{Train and Validation accuracy for batch size 128}
-\end{figure}
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.7\textwidth]{keras_lenet/accuracy200.png}
-  \caption{Train and Validation accuracy for batch size 200}
-\end{figure}
-
-
-
+\subsection{Conclusion}
+The training converges fastest with batch size 64 when we observe the
+loss and accuracy with respect to time.
 \end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

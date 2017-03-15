@@ -228,12 +228,12 @@ class LeNet(object):
 
     def plot_tsne(self, X, y):
         X = np.asarray(self.get_activations(X), dtype=np.float64)
-        X_2d = bh_sne(X[0])
+        X_2d = bh_sne(X)
         scatter(X_2d[:, 0], X_2d[:, 1], c=y)
         show()
 
     def get_activations(self, X):
-        output = np.ndarray(X.shape[0], 84)
+        output = np.ndarray((X.shape[0], 84))
         for i in xrange(X.shape[0]):
             output[i] = self.get_feature_vec(X[i])
         return output
@@ -245,10 +245,10 @@ class LeNet(object):
             out = l.forward(out)
 
         out = out.reshape(16*4*4)
-        for l in self.layers:
+        for l in self.linear_layers:
             if l.name is not 'softmax':
                 out = l.forward(out)
-            return out
+        return out
 
     def test(self, test_data, test_labels):
         hits = 0
@@ -263,17 +263,17 @@ class LeNet(object):
     def train(self, train_data, train_labels, val_data, val_labels, config):  #
         '''
         config : a dictionary with following entries
-         filename   : name of file to store results
-         batchSize  : batchSize for minibatch
-         max_epochs : number of epochs to run
-         hyperParams: a list with -
-          momentum:
-             learningRate : hyperParams[0]
-             gamma        : hyperParams[1]
-          adam:
-             alpha : hyperParams[0]
-             beta1 : hyperParams[1]
-             beta2 : hyperParams[2]
+        filename   : name of file to store results
+        batchSize  : batchSize for minibatch
+        max_epochs : number of epochs to run
+        hyperParams: a list with -
+         momentum:
+            learningRate : hyperParams[0]
+            gamma        : hyperParams[1]
+         adam:
+            alpha : hyperParams[0]
+            beta1 : hyperParams[1]
+            beta2 : hyperParams[2]
         '''
         # train_size = train_labels.shape[0]
         # val_size = val_labels.shape[0]
@@ -342,12 +342,44 @@ class LeNet(object):
                         + str(accuracy_val) + ', '
                         + str(time.time() - start_time) + '\n')
 
+    def load_weights(self):
+        self.conv_layers[0].params[0] \
+            = np.load('params/conv_layer_0_weight.npy')
+        self.conv_layers[0].params[1] = np.load('params/conv_layer_0_bias.npy')
+        self.conv_layers[2].params[0] \
+            = np.load('params/conv_layer_1_weight.npy')
+        self.conv_layers[2].params[1] = np.load('params/conv_layer_1_bias.npy')
+        self.linear_layers[0].params[0] \
+            = np.load('params/linear_layer_2_weight.npy')
+        self.linear_layers[0].params[1] \
+            = np.load('params/linear_layer_2_bias.npy')
+        self.linear_layers[1].params[0] \
+            = np.load('params/linear_layer_3_weight.npy')
+        self.linear_layers[1].params[1] \
+            = np.load('params/linear_layer_3_bias.npy')
+        self.linear_layers[2].params[0] \
+            = np.load('params/softmax_layer_4_weight.npy')
+        self.linear_layers[2].params[1] \
+            = np.load('params/softmax_layer_4_bias.npy')
+
 
 if __name__ == '__main__':
+    import gzip
+    import cPickle as pkl
+
+    f = gzip.open('mnist.pkl.gz', 'rb')
+    trainset, _, _ = pkl.load(f)
+    f.close()
+
     inp_tensor = np.random.normal(size=(1, 28, 28))
     net = LeNet()
+    net.load_weights()
+    X = trainset[0][:10000]
+    y = trainset[1][:10000]
+    X = X.reshape(10000, 1, 28, 28)
+    net.plot_tsne(X, y)
     # net.tell_time_taken()
-    net.plotPerformance('relu.log')
+    # net.plotPerformance('relu.log')
     # net.forward(inp_tensor)
     # net.cross_entropy_loss(4)
     # net.backward(7)
