@@ -4,3 +4,7 @@
 *.pyc
 *.zip
 *.png
+*.aux
+*.npy
+*.fls
+*.fdb_latexmk
